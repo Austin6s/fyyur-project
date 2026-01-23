@@ -5,17 +5,21 @@ Fyyur
 
 Fyyur is a musical venue and artist booking site that facilitates the discovery and bookings of shows between local performing artists and venues. This site lets you list new artists and venues, discover them, and list shows with artists as a venue owner.
 
-Your job is to build out the data models to power the API endpoints for the Fyyur site by connecting to a PostgreSQL database for storing, querying, and creating information about artists and venues on Fyyur.
-
 ## Overview
 
-This app is nearly complete. It is only missing one thing… real data! While the views and controllers are defined in this application, it is missing models and model interactions to be able to store retrieve, and update data from a database. By the end of this project, you should have a fully functioning site that is at least capable of doing the following, if not more, using a PostgreSQL database:
+This is a fully functioning venue and artist booking site powered by a PostgreSQL database. The application supports:
 
-* creating new venues, artists, and creating new shows.
-* searching for venues and artists.
-* learning more about a specific artist or venue.
+* Creating, reading, updating, and deleting venues and artists
+* Creating shows that link artists to venues
+* Searching for venues and artists (case-insensitive, partial string matching)
+* Viewing detailed information about specific artists or venues
+* Distinguishing between past and upcoming shows
 
-We want Fyyur to be the next new platform that artists and musical venues can use to find each other, and discover new music shows. Let's make that happen!
+### Bonus Features Implemented
+
+* **Artist Availability**: Artists can set available time windows for bookings
+* **Recent Listings**: Homepage displays the 10 most recently listed venues and artists
+* **Discography Management**: Artists can add albums and songs to their profile
 
 ## Tech Stack (Dependencies)
 
@@ -80,27 +84,26 @@ Overall:
 
 
 Highlight folders:
-* `templates/pages` -- (Already complete.) Defines the pages that are rendered to the site. These templates render views based on data passed into the template’s view, in the controllers defined in `app.py`. These pages successfully represent the data to the user, and are already defined for you.
-* `templates/layouts` -- (Already complete.) Defines the layout that a page can be contained in to define footer and header code for a given page.
-* `templates/forms` -- (Already complete.) Defines the forms used to create new artists, shows, and venues.
-* `app.py` -- (Missing functionality.) Defines routes that match the user’s URL, and controllers which handle data and renders views to the user. This is the main file you will be working on to connect to and manipulate the database and render views with data to the user, based on the URL.
-* Models in `app.py` -- (Missing functionality.) Defines the data models that set up the database tables.
-* `config.py` -- (Missing functionality.) Stores configuration variables and instructions, separate from the main application code. This is where you will need to connect to the database.
+* `templates/pages` -- Defines the pages that are rendered to the site. These templates render views based on data passed into the template's view, in the controllers defined in `app.py`.
+* `templates/layouts` -- Defines the layout that a page can be contained in to define footer and header code for a given page.
+* `templates/forms` -- Defines the forms used to create new artists, shows, and venues.
+* `app.py` -- Defines routes that match the user's URL, and controllers which handle data and renders views to the user. Contains all models and database interactions.
+* Models in `app.py` -- Defines the data models (Venue, Artist, Show, Availability, Album, Song) that set up the database tables.
+* `config.py` -- Stores configuration variables including the PostgreSQL database connection string.
 
 
-Instructions
+Implementation Complete
 -----
 
-1. Understand the Project Structure (explained above) and where important files are located.
-2. Build and run local development following the Development Setup steps below.
-3. Fill in the missing functionality in this application: this application currently pulls in fake data, and needs to now connect to a real database and talk to a real backend.
-4. Fill out every `TODO` section throughout the codebase. We suggest going in order of the following:
-    * Connect to a database in `config.py`. A project submission that uses a local database connection is fine.
-    * Using SQLAlchemy, set up normalized models for the objects we support in our web app in the Models section of `app.py`. Check out the sample pages provided at /artists/1, /venues/1, and /shows for examples of the data we want to model, using all of the learned best practices in database schema design. Implement missing model properties and relationships using database migrations via Flask-Migrate.
-    * Implement form submissions for creating new Venues, Artists, and Shows. There should be proper constraints, powering the `/create` endpoints that serve the create form templates, to avoid duplicate or nonsensical form submissions. Submitting a form should create proper new records in the database.
-    * Implement the controllers for listing venues, artists, and shows. Note the structure of the mock data used. We want to keep the structure of the mock data.
-    * Implement search, powering the `/search` endpoints that serve the application's search functionalities.
-    * Serve venue and artist detail pages, powering the `<venue|artist>/<id>` endpoints that power the detail pages.
+All functionality has been implemented:
+
+1. **Database Connection** - PostgreSQL database configured in `config.py`
+2. **Models** - Venue, Artist, Show, Availability, Album, and Song models with proper relationships
+3. **Create Operations** - Form submissions for creating venues, artists, and shows with validation
+4. **Read Operations** - Listing venues (grouped by city/state), artists, and shows with real data
+5. **Search** - Case-insensitive partial string matching for venues and artists
+6. **Detail Pages** - Venue and artist pages showing past vs upcoming shows
+7. **Edit/Delete** - Update and delete functionality for venues and artists (with cascade delete)
 
 #### Data Handling with `Flask-WTF` Forms
 The starter codes use an interactive form builder library called [Flask-WTF](https://flask-wtf.readthedocs.io/). This library provides useful functionality, such as form validation and error handling. You can peruse the Show, Venue, and Artist form builders in `forms.py` file. The WTForms are instantiated in the `app.py` file. For example, in the `create_shows()` function, the Show form is instantiated from the command: `form = ShowForm()`. To manage the request from Flask-WTF form, each field from the form has a `data` attribute containing the value from user input. For example, to handle the `venue_id` data from the Venue form, you can use: `show = Show(venue_id=form.venue_id.data)`, instead of using `request.form['venue_id']`.
@@ -118,21 +121,19 @@ Acceptance Criteria
   * Past shows versus Upcoming shows should be distinguished in Venue and Artist pages.
   * A user should be able to click on the venue for an upcoming show in the Artist's page, and on that Venue's page, see the same show in the Venue Page's upcoming shows section.
 4. As a fellow developer on this application, I should be able to run `flask db migrate`, and have my local database (once set up and created) be populated with the right tables to run this application and have it interact with my local postgres server, serving the application's needs completely with real data I can seed my local database with.
-  * The models should be completed (see TODOs in the `Models` section of `app.py`) and model the objects used throughout Fyyur.
+  * The models are complete in the `Models` section of `app.py` and model all objects used throughout Fyyur.
   * Define the models in a different file to follow [Separation of Concerns](https://en.wikipedia.org/wiki/Separation_of_concerns) design principles. You can refactor the models to a new file, such as `models.py`.
   * The right _type_ of relationship and parent-child dynamics between models should be accurately identified and fit the needs of this particular application.
   * The relationship between the models should be accurately configured, and referential integrity amongst the models should be preserved.
   * `flask db migrate` should work, and populate my local postgres database with properly configured tables for this application's objects, including proper columns, column data types, constraints, defaults, and relationships that completely satisfy the needs of this application. The proper type of relationship between venues, artists, and shows should be configured.
 
-##### Stand Out
+##### Stand Out Features (Implemented)
 
-Looking to go above and beyond? This is the right section for you! Here are some challenges to make your submission stand out:
+The following bonus features have been implemented:
 
-*  Implement artist availability. An artist can list available times that they can be booked. Restrict venues from being able to create shows with artists during a show time that is outside of their availability.
-* Show Recent Listed Artists and Recently Listed Venues on the homepage, returning results for Artists and Venues sorting by newly created. Limit to the 10 most recently listed items.
-* Implement Search Artists by City and State, and Search Venues by City and State. Searching by "San Francisco, CA" should return all artists or venues in San Francisco, CA.
-
-Best of luck in your final project! Fyyur depends on you!
+* **Artist Availability** - Artists can add availability windows specifying when they can be booked. Managed via the artist detail page.
+* **Recent Listings** - Homepage displays the 10 most recently created venues and artists.
+* **Discography** - Artists can add albums (with optional year) and songs to their profile.
 
 
 ## Development Setup

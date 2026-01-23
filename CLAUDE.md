@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Fyyur is a musical venue and artist booking platform (Udacity Full Stack Nanodegree project). The UI and route controllers exist but currently use mock data. The core task is implementing database models and replacing mock data with real PostgreSQL queries.
+Fyyur is a musical venue and artist booking platform (Udacity Full Stack Nanodegree project). This is a fully functioning Flask application connected to a PostgreSQL database.
 
 ## Development Commands
 
@@ -19,7 +19,7 @@ pip install -r requirements.txt
 # Run development server (localhost:5000)
 python3 app.py
 
-# Database migrations (after configuring PostgreSQL)
+# Database migrations
 flask db migrate
 flask db upgrade
 ```
@@ -33,36 +33,33 @@ flask db upgrade
 - **Frontend:** Jinja2 templates, Bootstrap 3
 
 ### Key Files
-- `app.py` - Main application: models (incomplete), routes/controllers, filters
-- `config.py` - Database URL configuration (TODO: set PostgreSQL connection)
+- `app.py` - Main application: models, routes/controllers, filters
+- `config.py` - Database URL configuration
 - `forms.py` - WTForms for Venue, Artist, Show creation
-- `templates/` - Jinja2 templates (complete, do not modify)
+- `templates/` - Jinja2 templates
 
-### Data Model Relationships
-The app requires three models with a many-to-many relationship:
+### Data Models
 - `Venue` - venues where shows occur
 - `Artist` - performers
-- `Show` - junction table linking artists to venues with start_time (NOT YET IMPLEMENTED)
+- `Show` - junction table linking artists to venues with start_time
+- `Availability` - artist availability windows (bonus feature)
+- `Album` - artist albums (bonus feature)
+- `Song` - songs belonging to albums (bonus feature)
 
 ### Route Structure
 - `/venues`, `/venues/<id>`, `/venues/search`, `/venues/create`
 - `/artists`, `/artists/<id>`, `/artists/search`, `/artists/create`
 - `/shows`, `/shows/create`
 - Edit routes: `/venues/<id>/edit`, `/artists/<id>/edit`
+- Delete routes: `/venues/<id>` (DELETE method)
+- Bonus routes: `/artists/<id>/availability`, `/artists/<id>/albums`, `/albums/<id>/songs`
 
-## Implementation Requirements
-
-### Missing Model Fields (based on mock data)
-**Venue:** genres, website, seeking_talent (bool), seeking_description
-**Artist:** website, seeking_venue (bool), seeking_description
-**Show:** venue_id, artist_id, start_time (datetime)
+## Key Implementation Details
 
 ### Critical Constraints
-- Maintain exact mock data structure when returning real data
-- Search must be case-insensitive and support partial string matching
-- Venues must be grouped by city/state in `/venues` endpoint
+- Search is case-insensitive and supports partial string matching
+- Venues are grouped by city/state in `/venues` endpoint
 - Past vs upcoming shows distinguished by comparing start_time to current datetime
-- Use `form.field.data` to access WTForms values (not `request.form`)
 
 ### Forms Pattern
 ```python

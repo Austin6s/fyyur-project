@@ -89,7 +89,10 @@ app.jinja_env.filters['datetime'] = format_datetime
 
 @app.route('/')
 def index():
-  return render_template('pages/home.html')
+  # Bonus: Show 10 most recently listed venues and artists
+  recent_venues = Venue.query.order_by(Venue.id.desc()).limit(10).all()
+  recent_artists = Artist.query.order_by(Artist.id.desc()).limit(10).all()
+  return render_template('pages/home.html', recent_venues=recent_venues, recent_artists=recent_artists)
 
 
 #  Venues
@@ -199,8 +202,14 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
+  form = VenueForm()
+
+  # Validate form (checks DataRequired, URL validators, etc.)
+  if not form.validate():
+    flash('Invalid form submission. Please check required fields.')
+    return render_template('forms/new_venue.html', form=form)
+
   try:
-    # 1. Create form instance - use request.form directly for reliability
     venue = Venue(
       name=request.form.get('name'),
       city=request.form.get('city'),
@@ -210,24 +219,18 @@ def create_venue_submission():
       image_link=request.form.get('image_link'),
       facebook_link=request.form.get('facebook_link'),
       website=request.form.get('website_link'),
-      genres=','.join(request.form.getlist('genres')),  # getlist for multi-select
-      seeking_talent=request.form.get('seeking_talent') == 'y',  # checkbox returns 'y' or None
+      genres=','.join(request.form.getlist('genres')),
+      seeking_talent=request.form.get('seeking_talent') == 'y',
       seeking_description=request.form.get('seeking_description')
     )
-
-    # 2. Stage and commit to database
     db.session.add(venue)
     db.session.commit()
-
-    # 3. Success message
     flash('Venue ' + venue.name + ' was successfully listed!')
   except Exception as e:
-    # 4. If anything fails, rollback the transaction
     db.session.rollback()
-    print(f'ERROR: {e}')  # Print to terminal for debugging
+    print(f'ERROR: {e}')
     flash('An error occurred. Venue could not be listed.')
   finally:
-    # 5. Always close the session
     db.session.close()
 
   return render_template('pages/home.html')
@@ -408,6 +411,12 @@ def create_artist_form():
 
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
+  form = ArtistForm()
+
+  if not form.validate():
+    flash('Invalid form submission. Please check required fields.')
+    return render_template('forms/new_artist.html', form=form)
+
   try:
     artist = Artist(
       name=request.form.get('name'),
@@ -462,6 +471,12 @@ def create_shows():
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
+  form = ShowForm()
+
+  if not form.validate():
+    flash('Invalid form submission. Please check required fields.')
+    return render_template('forms/new_show.html', form=form)
+
   try:
     show = Show(
       venue_id=request.form.get('venue_id'),

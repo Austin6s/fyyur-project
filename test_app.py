@@ -2,6 +2,7 @@
 Tests for Fyyur application.
 Run with: pytest test_app.py -v
 """
+
 import os
 import pytest
 from datetime import datetime, timedelta
@@ -84,7 +85,9 @@ class TestModels:
     def test_artist_creation(self, client):
         """Test creating an artist."""
         with app.app_context():
-            artist = Artist(name="New Artist", city="Chicago", state="IL", genres="Blues")
+            artist = Artist(
+                name="New Artist", city="Chicago", state="IL", genres="Blues"
+            )
             db.session.add(artist)
             db.session.commit()
             assert artist.id is not None
@@ -349,7 +352,9 @@ class TestCreateOperations:
 
     def test_create_show_submission(self, client, sample_venue, sample_artist):
         """Test creating a show via form submission."""
-        future_time = (datetime.now() + timedelta(days=10)).strftime("%Y-%m-%d %H:%M:%S")
+        future_time = (datetime.now() + timedelta(days=10)).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         response = client.post(
             "/shows/create",
             data={
@@ -362,7 +367,9 @@ class TestCreateOperations:
         assert response.status_code == 200
 
         with app.app_context():
-            show = Show.query.filter_by(venue_id=sample_venue, artist_id=sample_artist).first()
+            show = Show.query.filter_by(
+                venue_id=sample_venue, artist_id=sample_artist
+            ).first()
             assert show is not None
 
 
@@ -472,7 +479,9 @@ class TestBonusFeatures:
             assert len(album.songs) == 1
             assert album.songs[0].name == "New Song"
 
-    def test_availability_restricts_show_booking(self, client, sample_venue, sample_artist):
+    def test_availability_restricts_show_booking(
+        self, client, sample_venue, sample_artist
+    ):
         """Test that shows can only be booked during artist availability."""
         with app.app_context():
             # Set availability for next week only
@@ -485,7 +494,9 @@ class TestBonusFeatures:
             db.session.commit()
 
         # Try to book outside availability window
-        outside_time = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
+        outside_time = (datetime.now() + timedelta(days=30)).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         response = client.post(
             "/shows/create",
             data={

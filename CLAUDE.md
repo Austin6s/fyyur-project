@@ -4,65 +4,65 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Fyyur is a musical venue and artist booking platform (Udacity Full Stack Nanodegree project). This is a fully functioning Flask application connected to a PostgreSQL database.
+Fyyur is a Python Flask web application for booking musical artists at venues. It connects artists with venues and manages show listings.
 
-## Development Commands
+**Tech Stack**: Python 3.12, Flask, PostgreSQL, SQLAlchemy, Flask-Migrate, Flask-WTF, Jinja2 templates, Bootstrap 3
+
+## Common Commands
 
 ```bash
-# Setup virtual environment
-python -m virtualenv env
-source env/bin/activate  # Windows: env/Scripts/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run development server (localhost:5000)
+# Run the application (starts on http://localhost:5000)
 python3 app.py
 
-# Database migrations
-flask db migrate
-flask db upgrade
-```
+# Run tests
+pytest test_app.py -v
 
-**Note:** Use Python 3.9 or lower to avoid dependency issues.
+# Run a single test
+pytest test_app.py::test_function_name -v
+
+# Format code
+black app.py forms.py test_app.py config.py
+
+# Lint code
+flake8 app.py forms.py test_app.py config.py
+
+# Database migrations
+flask db migrate    # Create migration from model changes
+flask db upgrade    # Apply migrations to database
+```
 
 ## Architecture
 
-### Tech Stack
-- **Backend:** Flask, SQLAlchemy ORM, PostgreSQL, Flask-Migrate, Flask-WTF
-- **Frontend:** Jinja2 templates, Bootstrap 3
+### Main Files
+- **app.py** - Flask app with models, routes, and controllers (all in one file)
+- **forms.py** - WTForms form definitions (VenueForm, ArtistForm, ShowForm)
+- **config.py** - Database configuration, uses `TEST_DATABASE` env var to switch between test/prod databases
+- **test_app.py** - pytest test suite
 
-### Key Files
-- `app.py` - Main application: models, routes/controllers, filters
-- `config.py` - Database URL configuration
-- `forms.py` - WTForms for Venue, Artist, Show creation
-- `templates/` - Jinja2 templates
+### Database Models (defined in app.py)
+- **Venue** - Music venues with location, contact info, genres
+- **Artist** - Performers with contact info, genres, seeking status
+- **Show** - Links Artist to Venue with start_time (foreign keys to both)
+- **Availability** - Artist booking windows (belongs to Artist)
+- **Album** - Artist discography (belongs to Artist)
+- **Song** - Tracks within albums (belongs to Album)
 
-### Data Models
-- `Venue` - venues where shows occur
-- `Artist` - performers
-- `Show` - junction table linking artists to venues with start_time
-- `Availability` - artist availability windows (bonus feature)
-- `Album` - artist albums (bonus feature)
-- `Song` - songs belonging to albums (bonus feature)
+All relationships use cascade delete - deleting an Artist removes their Shows, Availability, and Albums.
 
-### Route Structure
-- `/venues`, `/venues/<id>`, `/venues/search`, `/venues/create`
-- `/artists`, `/artists/<id>`, `/artists/search`, `/artists/create`
+### URL Structure
+- `/venues`, `/venues/<id>`, `/venues/create`, `/venues/<id>/edit`
+- `/artists`, `/artists/<id>`, `/artists/create`, `/artists/<id>/edit`
+- `/artists/<id>/availability` - POST to add availability windows
+- `/artists/<id>/albums`, `/albums/<id>/songs` - Discography management
 - `/shows`, `/shows/create`
-- Edit routes: `/venues/<id>/edit`, `/artists/<id>/edit`
-- Delete routes: `/venues/<id>` (DELETE method)
-- Bonus routes: `/artists/<id>/availability`, `/artists/<id>/albums`, `/albums/<id>/songs`
+- Search: POST to `/venues/search` or `/artists/search`
 
-## Key Implementation Details
+### Templates
+- `templates/layouts/` - Base templates (main.html, form.html)
+- `templates/pages/` - Page content templates
+- `templates/forms/` - Form templates for create/edit
+- `templates/errors/` - 404 and 500 error pages
 
-### Critical Constraints
-- Search is case-insensitive and supports partial string matching
-- Venues are grouped by city/state in `/venues` endpoint
-- Past vs upcoming shows distinguished by comparing start_time to current datetime
+## Testing Notes
 
-### Forms Pattern
-```python
-form = VenueForm()
-venue = Venue(name=form.name.data, city=form.city.data, ...)
-```
+Tests use a separate `fyyur_test` database. The test suite sets `TEST_DATABASE=true` environment variable which config.py uses to switch database connections.

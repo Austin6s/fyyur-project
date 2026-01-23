@@ -43,7 +43,7 @@ class Venue(db.Model):
     website = db.Column(db.String(120))
     seeking_talent = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(500))
-    shows = db.relationship('Show', backref='venue', lazy=True)
+    shows = db.relationship('Show', backref='venue', lazy=True, cascade='all, delete-orphan')
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -59,7 +59,7 @@ class Artist(db.Model):
     website = db.Column(db.String(120))
     seeking_venue = db.Column(db.Boolean, default=False)
     seeking_description = db.Column(db.String(500))
-    shows = db.relationship('Show', backref='artist', lazy=True)
+    shows = db.relationship('Show', backref='artist', lazy=True, cascade='all, delete-orphan')
 
 class Show(db.Model):
     __tablename__ = 'Show'
@@ -236,9 +236,7 @@ def create_venue_submission():
 def delete_venue(venue_id):
   try:
     venue = Venue.query.get(venue_id)
-    # Delete related shows first (foreign key constraint)
-    Show.query.filter_by(venue_id=venue_id).delete()
-    db.session.delete(venue)
+    db.session.delete(venue)  # Cascade automatically deletes related shows
     db.session.commit()
   except:
     db.session.rollback()

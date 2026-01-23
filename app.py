@@ -300,11 +300,12 @@ def delete_venue(venue_id):
         venue = Venue.query.get(venue_id)
         db.session.delete(venue)
         db.session.commit()
+        return {"success": True}
     except Exception:
         db.session.rollback()
+        return {"success": False}, 500
     finally:
         db.session.close()
-    return redirect(url_for("index"))
 
 
 #  Artists

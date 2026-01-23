@@ -82,7 +82,18 @@
 function deleteVenue(venueId) {
   if (confirm('Are you sure you want to delete this venue?')) {
     fetch('/venues/' + venueId, {method: 'DELETE'})
-      .then(() => window.location.href = '/');
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = '/';
+        } else {
+          alert('Error deleting venue');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting venue');
+      });
   }
 }
 </script>

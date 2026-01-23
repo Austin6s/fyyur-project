@@ -12,5 +12,5 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 DEBUG = True
 
 # Connect to the database
-POSTGRES_PWD = os.getenv('POSTGRES_PWD')
-SQLALCHEMY_DATABASE_URI = f'postgresql://postgres:{POSTGRES_PWD}@localhost:5432/fyyur'
+POSTGRES_PWD = os.getenv("POSTGRES_PWD")
+SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:{POSTGRES_PWD}@localhost:5432/fyyur"

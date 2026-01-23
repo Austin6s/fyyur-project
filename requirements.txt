@@ -6,3 +6,5 @@ flask-sqlalchemy
 Flask-Migrate
 psycopg2-binary
 python-dotenv
+black
+flake8

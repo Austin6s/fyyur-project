@@ -13,4 +13,5 @@ DEBUG = True
 
 # Connect to the database
 POSTGRES_PWD = os.getenv("POSTGRES_PWD")
-SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:{POSTGRES_PWD}@localhost:5432/fyyur"
+DB_NAME = "fyyur_test" if os.getenv("TEST_DATABASE") else "fyyur"
+SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:{POSTGRES_PWD}@localhost:5432/{DB_NAME}"

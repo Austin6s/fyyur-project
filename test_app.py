@@ -2,22 +2,21 @@
 Tests for Fyyur application.
 Run with: pytest test_app.py -v
 """
+import os
 import pytest
 from datetime import datetime, timedelta
+
+# Set test database BEFORE importing app
+os.environ["TEST_DATABASE"] = "true"
+
 from app import app, db, Venue, Artist, Show, Availability, Album, Song
 
 
 @pytest.fixture
 def client():
     """Configure test client with test database."""
-    import os
-    from dotenv import load_dotenv
-    load_dotenv()
-
-    pwd = os.getenv("POSTGRES_PWD")
     app.config["TESTING"] = True
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://postgres:{pwd}@localhost:5432/fyyur_test"
-    app.config["WTF_CSRF_ENABLED"] = False  # Disable CSRF for testing
+    app.config["WTF_CSRF_ENABLED"] = False
 
     with app.test_client() as client:
         with app.app_context():

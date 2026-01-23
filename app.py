@@ -1,19 +1,15 @@
-# ----------------------------------------------------------------------------#
-# Imports
-# ----------------------------------------------------------------------------#
-
-import json
-import dateutil.parser
-import babel
+import logging
 from datetime import datetime
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from logging import FileHandler, Formatter
+
+import babel
+import dateutil.parser
+from flask import Flask, flash, redirect, render_template, request, url_for
+from flask_migrate import Migrate
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
-import logging
-from logging import Formatter, FileHandler
-from flask_wtf import Form
-from forms import *
-from flask_migrate import Migrate
+
+from forms import ArtistForm, ShowForm, VenueForm
 
 # ----------------------------------------------------------------------------#
 # App Config.
@@ -186,7 +182,6 @@ def venues():
 @app.route("/venues/search", methods=["POST"])
 def search_venues():
     search_term = request.form.get("search_term", "")
-    # ilike = case-insensitive LIKE
     venues = Venue.query.filter(Venue.name.ilike(f"%{search_term}%")).all()
     now = datetime.now()
 
@@ -303,9 +298,9 @@ def create_venue_submission():
 def delete_venue(venue_id):
     try:
         venue = Venue.query.get(venue_id)
-        db.session.delete(venue)  # Cascade automatically deletes related shows
+        db.session.delete(venue)
         db.session.commit()
-    except:
+    except Exception:
         db.session.rollback()
     finally:
         db.session.close()
@@ -449,9 +444,8 @@ def edit_artist_submission(artist_id):
         artist.website = request.form.get("website_link")
         artist.seeking_venue = request.form.get("seeking_venue") == "y"
         artist.seeking_description = request.form.get("seeking_description")
-        # No add() needed - object already tracked by session
         db.session.commit()
-    except:
+    except Exception:
         db.session.rollback()
     finally:
         db.session.close()
@@ -487,7 +481,7 @@ def delete_availability(artist_id, avail_id):
         db.session.delete(avail)
         db.session.commit()
         flash("Availability removed.")
-    except:
+    except Exception:
         db.session.rollback()
     finally:
         db.session.close()
@@ -575,7 +569,7 @@ def edit_venue_submission(venue_id):
         venue.seeking_talent = request.form.get("seeking_talent") == "y"
         venue.seeking_description = request.form.get("seeking_description")
         db.session.commit()
-    except:
+    except Exception:
         db.session.rollback()
     finally:
         db.session.close()
@@ -631,28 +625,23 @@ def create_artist_submission():
 
 @app.route("/shows")
 def shows():
-    # Query all shows with related venue and artist data
     shows = Show.query.all()
-    data = []
-
-    for show in shows:
-        data.append(
-            {
-                "venue_id": show.venue_id,
-                "venue_name": show.venue.name,  # Using relationship
-                "artist_id": show.artist_id,
-                "artist_name": show.artist.name,  # Using relationship
-                "artist_image_link": show.artist.image_link,
-                "start_time": str(show.start_time),  # Convert datetime to string
-            }
-        )
-
+    data = [
+        {
+            "venue_id": show.venue_id,
+            "venue_name": show.venue.name,
+            "artist_id": show.artist_id,
+            "artist_name": show.artist.name,
+            "artist_image_link": show.artist.image_link,
+            "start_time": str(show.start_time),
+        }
+        for show in shows
+    ]
     return render_template("pages/shows.html", shows=data)
 
 
 @app.route("/shows/create")
 def create_shows():
-    # renders form. do not touch.
     form = ShowForm()
     return render_template("forms/new_show.html", form=form)
 
@@ -699,12 +688,12 @@ def create_show_submission():
 
 
 @app.errorhandler(404)
-def not_found_error(error):
+def not_found_error(_error):
     return render_template("errors/404.html"), 404
 
 
 @app.errorhandler(500)
-def server_error(error):
+def server_error(_error):
     return render_template("errors/500.html"), 500
 
 
@@ -718,17 +707,5 @@ if not app.debug:
     app.logger.addHandler(file_handler)
     app.logger.info("errors")
 
-# ----------------------------------------------------------------------------#
-# Launch.
-# ----------------------------------------------------------------------------#
-
-# Default port:
 if __name__ == "__main__":
     app.run()
-
-# Or specify port manually:
-"""
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
-"""

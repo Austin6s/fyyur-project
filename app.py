@@ -130,18 +130,20 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-  # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-  # seach for Hop should return "The Musical Hop".
-  # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
-  response={
-    "count": 1,
+  search_term = request.form.get('search_term', '')
+  # ilike = case-insensitive LIKE
+  venues = Venue.query.filter(Venue.name.ilike(f'%{search_term}%')).all()
+  now = datetime.now()
+
+  response = {
+    "count": len(venues),
     "data": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
+      "id": v.id,
+      "name": v.name,
+      "num_upcoming_shows": len([s for s in v.shows if s.start_time > now])
+    } for v in venues]
   }
-  return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+  return render_template('pages/search_venues.html', results=response, search_term=search_term)
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
@@ -232,12 +234,17 @@ def create_venue_submission():
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
-  # TODO: Complete this endpoint for taking a venue_id, and using
-  # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
-
-  # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
-  # clicking that button delete it from the db then redirect the user to the homepage
-  return None
+  try:
+    venue = Venue.query.get(venue_id)
+    # Delete related shows first (foreign key constraint)
+    Show.query.filter_by(venue_id=venue_id).delete()
+    db.session.delete(venue)
+    db.session.commit()
+  except:
+    db.session.rollback()
+  finally:
+    db.session.close()
+  return redirect(url_for('index'))
 
 #  Artists
 #  ----------------------------------------------------------------
@@ -251,18 +258,19 @@ def artists():
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
-  # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-  # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
-  # search for "band" should return "The Wild Sax Band".
-  response={
-    "count": 1,
+  search_term = request.form.get('search_term', '')
+  artists = Artist.query.filter(Artist.name.ilike(f'%{search_term}%')).all()
+  now = datetime.now()
+
+  response = {
+    "count": len(artists),
     "data": [{
-      "id": 4,
-      "name": "Guns N Petals",
-      "num_upcoming_shows": 0,
-    }]
+      "id": a.id,
+      "name": a.name,
+      "num_upcoming_shows": len([s for s in a.shows if s.start_time > now])
+    } for a in artists]
   }
-  return render_template('pages/search_artists.html', results=response, search_term=request.form.get('search_term', ''))
+  return render_template('pages/search_artists.html', results=response, search_term=search_term)
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
@@ -311,54 +319,85 @@ def show_artist(artist_id):
 #  ----------------------------------------------------------------
 @app.route('/artists/<int:artist_id>/edit', methods=['GET'])
 def edit_artist(artist_id):
+  artist = Artist.query.get(artist_id)
   form = ArtistForm()
-  artist={
-    "id": 4,
-    "name": "Guns N Petals",
-    "genres": ["Rock n Roll"],
-    "city": "San Francisco",
-    "state": "CA",
-    "phone": "326-123-5000",
-    "website": "https://www.gunsnpetalsband.com",
-    "facebook_link": "https://www.facebook.com/GunsNPetals",
-    "seeking_venue": True,
-    "seeking_description": "Looking for shows to perform at in the San Francisco Bay Area!",
-    "image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80"
-  }
-  # TODO: populate form with fields from artist with ID <artist_id>
-  return render_template('forms/edit_artist.html', form=form, artist=artist)
+  # Pass artist data to template (form fields populated via template)
+  return render_template('forms/edit_artist.html', form=form, artist={
+    "id": artist.id,
+    "name": artist.name,
+    "genres": artist.genres.split(',') if artist.genres else [],
+    "city": artist.city,
+    "state": artist.state,
+    "phone": artist.phone,
+    "website": artist.website,
+    "facebook_link": artist.facebook_link,
+    "seeking_venue": artist.seeking_venue,
+    "seeking_description": artist.seeking_description,
+    "image_link": artist.image_link
+  })
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-  # TODO: take values from the form submitted, and update existing
-  # artist record with ID <artist_id> using the new attributes
-
+  try:
+    artist = Artist.query.get(artist_id)
+    # Update attributes directly on the queried object
+    artist.name = request.form.get('name')
+    artist.city = request.form.get('city')
+    artist.state = request.form.get('state')
+    artist.phone = request.form.get('phone')
+    artist.genres = ','.join(request.form.getlist('genres'))
+    artist.facebook_link = request.form.get('facebook_link')
+    artist.image_link = request.form.get('image_link')
+    artist.website = request.form.get('website_link')
+    artist.seeking_venue = request.form.get('seeking_venue') == 'y'
+    artist.seeking_description = request.form.get('seeking_description')
+    # No add() needed - object already tracked by session
+    db.session.commit()
+  except:
+    db.session.rollback()
+  finally:
+    db.session.close()
   return redirect(url_for('show_artist', artist_id=artist_id))
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
+  venue = Venue.query.get(venue_id)
   form = VenueForm()
-  venue={
-    "id": 1,
-    "name": "The Musical Hop",
-    "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-    "address": "1015 Folsom Street",
-    "city": "San Francisco",
-    "state": "CA",
-    "phone": "123-123-1234",
-    "website": "https://www.themusicalhop.com",
-    "facebook_link": "https://www.facebook.com/TheMusicalHop",
-    "seeking_talent": True,
-    "seeking_description": "We are on the lookout for a local artist to play every two weeks. Please call us.",
-    "image_link": "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60"
-  }
-  # TODO: populate form with values from venue with ID <venue_id>
-  return render_template('forms/edit_venue.html', form=form, venue=venue)
+  return render_template('forms/edit_venue.html', form=form, venue={
+    "id": venue.id,
+    "name": venue.name,
+    "genres": venue.genres.split(',') if venue.genres else [],
+    "address": venue.address,
+    "city": venue.city,
+    "state": venue.state,
+    "phone": venue.phone,
+    "website": venue.website,
+    "facebook_link": venue.facebook_link,
+    "seeking_talent": venue.seeking_talent,
+    "seeking_description": venue.seeking_description,
+    "image_link": venue.image_link
+  })
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-  # TODO: take values from the form submitted, and update existing
-  # venue record with ID <venue_id> using the new attributes
+  try:
+    venue = Venue.query.get(venue_id)
+    venue.name = request.form.get('name')
+    venue.city = request.form.get('city')
+    venue.state = request.form.get('state')
+    venue.address = request.form.get('address')
+    venue.phone = request.form.get('phone')
+    venue.genres = ','.join(request.form.getlist('genres'))
+    venue.facebook_link = request.form.get('facebook_link')
+    venue.image_link = request.form.get('image_link')
+    venue.website = request.form.get('website_link')
+    venue.seeking_talent = request.form.get('seeking_talent') == 'y'
+    venue.seeking_description = request.form.get('seeking_description')
+    db.session.commit()
+  except:
+    db.session.rollback()
+  finally:
+    db.session.close()
   return redirect(url_for('show_venue', venue_id=venue_id))
 
 #  Create Artist

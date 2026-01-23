@@ -308,6 +308,21 @@ def delete_venue(venue_id):
         db.session.close()
 
 
+@app.route("/venues/<venue_id>/delete", methods=["POST"])
+def delete_venue_post(venue_id):
+    try:
+        venue = Venue.query.get(venue_id)
+        db.session.delete(venue)
+        db.session.commit()
+        flash("Venue deleted successfully.")
+    except Exception:
+        db.session.rollback()
+        flash("Error deleting venue.")
+    finally:
+        db.session.close()
+    return redirect(url_for("index"))
+
+
 #  Artists
 #  ----------------------------------------------------------------
 @app.route("/artists")

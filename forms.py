@@ -7,7 +7,7 @@ from wtforms import (
     DateTimeField,
     BooleanField,
 )
-from wtforms.validators import DataRequired, URL
+from wtforms.validators import DataRequired
 
 
 class ShowForm(Form):
@@ -106,7 +106,7 @@ class VenueForm(Form):
             ("Other", "Other"),
         ],
     )
-    facebook_link = StringField("facebook_link", validators=[URL()])
+    facebook_link = StringField("facebook_link")
     website_link = StringField("website_link")
 
     seeking_talent = BooleanField("seeking_talent")
@@ -201,7 +201,7 @@ class ArtistForm(Form):
             ("Other", "Other"),
         ],
     )
-    facebook_link = StringField("facebook_link", validators=[URL()])
+    facebook_link = StringField("facebook_link")
 
     website_link = StringField("website_link")
 

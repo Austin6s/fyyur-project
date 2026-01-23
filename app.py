@@ -69,6 +69,32 @@ class Show(db.Model):
     artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
 
+class Availability(db.Model):
+    __tablename__ = 'Availability'
+
+    id = db.Column(db.Integer, primary_key=True)
+    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
+    start_time = db.Column(db.DateTime, nullable=False)  # Available from
+    end_time = db.Column(db.DateTime, nullable=False)    # Available until
+    artist = db.relationship('Artist', backref=db.backref('availability', lazy=True, cascade='all, delete-orphan'))
+
+class Album(db.Model):
+    __tablename__ = 'Album'
+
+    id = db.Column(db.Integer, primary_key=True)
+    artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
+    name = db.Column(db.String(120), nullable=False)
+    year = db.Column(db.Integer)
+    artist = db.relationship('Artist', backref=db.backref('albums', lazy=True, cascade='all, delete-orphan'))
+    songs = db.relationship('Song', backref='album', lazy=True, cascade='all, delete-orphan')
+
+class Song(db.Model):
+    __tablename__ = 'Song'
+
+    id = db.Column(db.Integer, primary_key=True)
+    album_id = db.Column(db.Integer, db.ForeignKey('Album.id'), nullable=False)
+    name = db.Column(db.String(120), nullable=False)
+
 #----------------------------------------------------------------------------#
 # Filters.
 #----------------------------------------------------------------------------#
@@ -295,6 +321,21 @@ def show_artist(artist_id):
     else:
       upcoming_shows.append(show_data)
 
+  # Get availability windows
+  availability = [{
+    "id": a.id,
+    "start_time": str(a.start_time),
+    "end_time": str(a.end_time)
+  } for a in artist.availability]
+
+  # Get albums with songs
+  albums = [{
+    "id": album.id,
+    "name": album.name,
+    "year": album.year,
+    "songs": [{"id": s.id, "name": s.name} for s in album.songs]
+  } for album in artist.albums]
+
   # Build data dict for template
   data = {
     "id": artist.id,
@@ -311,7 +352,9 @@ def show_artist(artist_id):
     "past_shows": past_shows,
     "upcoming_shows": upcoming_shows,
     "past_shows_count": len(past_shows),
-    "upcoming_shows_count": len(upcoming_shows)
+    "upcoming_shows_count": len(upcoming_shows),
+    "availability": availability,
+    "albums": albums
   }
 
   return render_template('pages/show_artist.html', artist=data)
@@ -359,6 +402,75 @@ def edit_artist_submission(artist_id):
   finally:
     db.session.close()
   return redirect(url_for('show_artist', artist_id=artist_id))
+
+#  Artist Availability
+#  ----------------------------------------------------------------
+@app.route('/artists/<int:artist_id>/availability', methods=['POST'])
+def add_availability(artist_id):
+  try:
+    start = datetime.strptime(request.form.get('start_time'), '%Y-%m-%d %H:%M:%S')
+    end = datetime.strptime(request.form.get('end_time'), '%Y-%m-%d %H:%M:%S')
+    availability = Availability(artist_id=artist_id, start_time=start, end_time=end)
+    db.session.add(availability)
+    db.session.commit()
+    flash('Availability added!')
+  except Exception as e:
+    db.session.rollback()
+    print(f'ERROR: {e}')
+    flash('Error adding availability.')
+  finally:
+    db.session.close()
+  return redirect(url_for('show_artist', artist_id=artist_id))
+
+@app.route('/artists/<int:artist_id>/availability/<int:avail_id>/delete', methods=['POST'])
+def delete_availability(artist_id, avail_id):
+  try:
+    avail = Availability.query.get(avail_id)
+    db.session.delete(avail)
+    db.session.commit()
+    flash('Availability removed.')
+  except:
+    db.session.rollback()
+  finally:
+    db.session.close()
+  return redirect(url_for('show_artist', artist_id=artist_id))
+
+#  Albums & Songs
+#  ----------------------------------------------------------------
+@app.route('/artists/<int:artist_id>/albums', methods=['POST'])
+def add_album(artist_id):
+  try:
+    album = Album(
+      artist_id=artist_id,
+      name=request.form.get('album_name'),
+      year=request.form.get('album_year') or None
+    )
+    db.session.add(album)
+    db.session.commit()
+    flash('Album added!')
+  except Exception as e:
+    db.session.rollback()
+    print(f'ERROR: {e}')
+    flash('Error adding album.')
+  finally:
+    db.session.close()
+  return redirect(url_for('show_artist', artist_id=artist_id))
+
+@app.route('/albums/<int:album_id>/songs', methods=['POST'])
+def add_song(album_id):
+  try:
+    album = Album.query.get(album_id)
+    song = Song(album_id=album_id, name=request.form.get('song_name'))
+    db.session.add(song)
+    db.session.commit()
+    flash('Song added!')
+  except Exception as e:
+    db.session.rollback()
+    print(f'ERROR: {e}')
+    flash('Error adding song.')
+  finally:
+    db.session.close()
+  return redirect(url_for('show_artist', artist_id=album.artist_id))
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
@@ -478,10 +590,25 @@ def create_show_submission():
     return render_template('forms/new_show.html', form=form)
 
   try:
+    artist_id = request.form.get('artist_id')
+    start_time_str = request.form.get('start_time')
+    start_time = datetime.strptime(start_time_str, '%Y-%m-%d %H:%M:%S')
+
+    # Check artist availability
+    artist = Artist.query.get(artist_id)
+    if artist.availability:  # If artist has set availability windows
+      is_available = any(
+        avail.start_time <= start_time <= avail.end_time
+        for avail in artist.availability
+      )
+      if not is_available:
+        flash(f'Artist {artist.name} is not available at that time.')
+        return render_template('forms/new_show.html', form=form)
+
     show = Show(
       venue_id=request.form.get('venue_id'),
-      artist_id=request.form.get('artist_id'),
-      start_time=request.form.get('start_time')
+      artist_id=artist_id,
+      start_time=start_time
     )
     db.session.add(show)
     db.session.commit()

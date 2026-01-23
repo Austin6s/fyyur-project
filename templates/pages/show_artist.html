@@ -74,5 +74,69 @@
 
 <a href="/artists/{{ artist.id }}/edit"><button class="btn btn-primary btn-lg">Edit</button></a>
 
+<section>
+	<h2 class="monospace">Discography</h2>
+	{% if artist.albums %}
+		{% for album in artist.albums %}
+		<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ddd;">
+			<h4>{{ album.name }} {% if album.year %}({{ album.year }}){% endif %}</h4>
+			{% if album.songs %}
+			<ol>
+				{% for song in album.songs %}
+				<li>{{ song.name }}</li>
+				{% endfor %}
+			</ol>
+			{% else %}
+			<p><em>No songs added</em></p>
+			{% endif %}
+			<form action="/albums/{{ album.id }}/songs" method="post" style="display:inline-flex; gap:10px;">
+				<input type="text" name="song_name" placeholder="Song name" class="form-control" style="width:200px;" required>
+				<button type="submit" class="btn btn-sm btn-success">Add Song</button>
+			</form>
+		</div>
+		{% endfor %}
+	{% else %}
+	<p>No albums listed</p>
+	{% endif %}
+
+	<h4>Add Album</h4>
+	<form action="/artists/{{ artist.id }}/albums" method="post" style="display:inline-flex; gap:10px;">
+		<input type="text" name="album_name" placeholder="Album name" class="form-control" style="width:200px;" required>
+		<input type="number" name="album_year" placeholder="Year" class="form-control" style="width:100px;">
+		<button type="submit" class="btn btn-success">Add Album</button>
+	</form>
+</section>
+
+<section>
+	<h2 class="monospace">Availability</h2>
+	{% if artist.availability %}
+	<ul>
+		{% for avail in artist.availability %}
+		<li>
+			{{ avail.start_time }} - {{ avail.end_time }}
+			<form action="/artists/{{ artist.id }}/availability/{{ avail.id }}/delete" method="post" style="display:inline;">
+				<button type="submit" class="btn btn-danger btn-sm">Remove</button>
+			</form>
+		</li>
+		{% endfor %}
+	</ul>
+	{% else %}
+	<p>No availability set (artist available anytime)</p>
+	{% endif %}
+
+	<h4>Add Availability Window</h4>
+	<form action="/artists/{{ artist.id }}/availability" method="post">
+		<div class="form-group">
+			<label>Available From:</label>
+			<input type="text" name="start_time" class="form-control" placeholder="YYYY-MM-DD HH:MM:SS" required>
+		</div>
+		<div class="form-group">
+			<label>Available Until:</label>
+			<input type="text" name="end_time" class="form-control" placeholder="YYYY-MM-DD HH:MM:SS" required>
+		</div>
+		<button type="submit" class="btn btn-success">Add Availability</button>
+	</form>
+</section>
+
 {% endblock %}
 

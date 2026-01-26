@@ -30,10 +30,10 @@ class Venue(db.Model):
     __tablename__ = "Venue"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
+    name = db.Column(db.String, nullable=False)
+    city = db.Column(db.String(120), nullable=False)
+    state = db.Column(db.String(120), nullable=False)
+    address = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
@@ -50,9 +50,9 @@ class Artist(db.Model):
     __tablename__ = "Artist"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
+    name = db.Column(db.String, nullable=False)
+    city = db.Column(db.String(120), nullable=False)
+    state = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(120))
     genres = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
@@ -291,7 +291,7 @@ def create_venue_submission():
     finally:
         db.session.close()
 
-    return render_template("pages/home.html")
+    return redirect(url_for("index"))
 
 
 @app.route("/venues/<venue_id>", methods=["DELETE"])
@@ -632,7 +632,7 @@ def create_artist_submission():
         flash("An error occurred. Artist could not be listed.")
     finally:
         db.session.close()
-    return render_template("pages/home.html")
+    return redirect(url_for("index"))
 
 
 #  Shows
@@ -700,7 +700,7 @@ def create_show_submission():
         flash("An error occurred. Show could not be listed.")
     finally:
         db.session.close()
-    return render_template("pages/home.html")
+    return redirect(url_for("index"))
 
 
 @app.errorhandler(404)

@@ -4,65 +4,79 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Fyyur is a Python Flask web application for booking musical artists at venues. It connects artists with venues and manages show listings.
+Fyyur is a venue and artist booking application built with Flask and PostgreSQL. Users can create, search, and manage venues, artists, and shows. Includes bonus features: artist availability windows and discography management.
 
-**Tech Stack**: Python 3.12, Flask, PostgreSQL, SQLAlchemy, Flask-Migrate, Flask-WTF, Jinja2 templates, Bootstrap 3
+**Course Context**: This is Project 1 from the Udacity "Backend Developer with Python" Nanodegree, part of Course 02 "SQL and Data Modeling for the Web with Python". The project demonstrates:
+- SQLAlchemy ORM and Flask-SQLAlchemy
+- Database CRUD operations
+- Model relationships and data modeling
+- Database migrations with Flask-Migrate/Alembic
 
-## Common Commands
+## Commands
 
 ```bash
-# Run the application (starts on http://localhost:5000)
-python3 app.py
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+python app.py
 
 # Run tests
 pytest test_app.py -v
 
-# Run a single test
-pytest test_app.py::test_function_name -v
+# Linting
+flake8
 
-# Format code
-black app.py forms.py test_app.py config.py
-
-# Lint code
-flake8 app.py forms.py test_app.py config.py
+# Code formatting
+black .
 
 # Database migrations
-flask db migrate    # Create migration from model changes
-flask db upgrade    # Apply migrations to database
+flask db migrate
+flask db upgrade
+
+# Fabric tasks
+fab test      # Run tests
+fab prepare   # Test, commit, and push
+fab deploy    # Deploy to Heroku
+```
+
+## Testing
+
+Tests use a separate database (`fyyur_test`). The test file sets `TEST_DATABASE=true` automatically.
+
+```bash
+pytest test_app.py -v
 ```
 
 ## Architecture
 
-### Main Files
-- **app.py** - Flask app with models, routes, and controllers (all in one file)
-- **forms.py** - WTForms form definitions (VenueForm, ArtistForm, ShowForm)
-- **config.py** - Database configuration, uses `TEST_DATABASE` env var to switch between test/prod databases
-- **test_app.py** - pytest test suite
+**Single-file Flask app** (`app.py`) containing models, routes, and controllers.
 
-### Database Models (defined in app.py)
-- **Venue** - Music venues with location, contact info, genres
-- **Artist** - Performers with contact info, genres, seeking status
-- **Show** - Links Artist to Venue with start_time (foreign keys to both)
-- **Availability** - Artist booking windows (belongs to Artist)
-- **Album** - Artist discography (belongs to Artist)
-- **Song** - Tracks within albums (belongs to Album)
+### Database Models
 
-All relationships use cascade delete - deleting an Artist removes their Shows, Availability, and Albums.
+- **Venue** - Has many Shows (cascade delete)
+- **Artist** - Has many Shows, Availability windows, Albums (all cascade delete)
+- **Show** - Links Venue and Artist with start_time
+- **Availability** - Artist booking windows (start_time, end_time)
+- **Album** - Artist discography, has many Songs
+- **Song** - Individual tracks in Albums
 
-### URL Structure
-- `/venues`, `/venues/<id>`, `/venues/create`, `/venues/<id>/edit`
-- `/artists`, `/artists/<id>`, `/artists/create`, `/artists/<id>/edit`
-- `/artists/<id>/availability` - POST to add availability windows
-- `/artists/<id>/albums`, `/albums/<id>/songs` - Discography management
-- `/shows`, `/shows/create`
-- Search: POST to `/venues/search` or `/artists/search`
+### Key Implementation Details
 
-### Templates
-- `templates/layouts/` - Base templates (main.html, form.html)
-- `templates/pages/` - Page content templates
-- `templates/forms/` - Form templates for create/edit
-- `templates/errors/` - 404 and 500 error pages
+- Genres stored as comma-separated strings in DB; split/join in controllers
+- Boolean fields use `"y"` string checks from forms
+- DELETE operations use form POST for browser compatibility
+- Show creation validates against artist availability windows
+- Past/upcoming shows determined by comparing start_time to `datetime.now()`
 
-## Testing Notes
+### Database Configuration
 
-Tests use a separate `fyyur_test` database. The test suite sets `TEST_DATABASE=true` environment variable which config.py uses to switch database connections.
+- Production: `fyyur` database
+- Testing: `fyyur_test` database (triggered by `TEST_DATABASE` env var)
+- PostgreSQL on localhost:5432
+- Password from `.env` file (`POSTGRES_PWD`)
+
+## Code Style
+
+- Black formatting (line length 88)
+- Flake8 linting (config in `.flake8`)

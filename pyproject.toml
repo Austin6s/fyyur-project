@@ -1,0 +1,11 @@
+[tool.black]
+line-length = 88
+extend-exclude = '''
+/(
+  \.venv
+  | venv
+  | migrations
+  | node_modules
+  | \.pytest_cache
+)/
+'''

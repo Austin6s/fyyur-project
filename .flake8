@@ -1,5 +1,5 @@
 [flake8]
-exclude = venv,.git,__pycache__,migrations,fabfile.py
+exclude = .venv,venv,.git,__pycache__,migrations,fabfile.py
 max-line-length = 88
 per-file-ignores =
     test_app.py:E402
